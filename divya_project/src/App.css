@@ -1,0 +1,141 @@
+.app {
+  display: flex;
+  height: 100vh;
+}
+
+.contacts {
+  width: 25%;
+  border-right: 1px solid #ccc;
+  overflow-y: auto;
+}
+
+
+.chat {
+  width: 75%;
+  padding: 10px;
+}
+
+.messages {
+  height: calc(100vh - 100px);
+  overflow-y: auto;
+  color: black;
+  background-color: blue;
+}
+
+input {
+  width: calc(100% - 60px);
+  margin-right: 10px;
+}
+
+button {
+  width: 50px;
+}
+body {
+  background-color: #f0f0f0;
+}
+.sidebar {
+  background-color: #f8f9fa;
+  height: 100vh;
+  overflow-y: auto;
+  border-right: 1px solid #ddd;
+}
+.sidebar-header {
+  background-color: #075E54;
+  color: white;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat-list-item {
+  padding: 10px;
+  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+}
+.link{
+  color:rgb(67, 64, 64);
+  text-decoration: none;
+
+}
+.chat-list-item:hover {
+  background-color: #e0e0e0;
+}
+.chat-list-item img {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+.chat-window {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  margin-left: -20px;
+  margin-top: -10px;
+}
+.chat-header {
+  background-color: #075E54;
+  color: white;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 20px;
+}
+.chat-header i{
+  position: absolute;
+  right: 100px;
+  
+}
+.chat-messages {
+  flex-grow: 1;
+  padding: 15px;
+  background-color: #ece5dd;
+  overflow-y: auto;
+}
+.message {
+  margin-bottom: 15px;
+}
+.message.sent {
+  text-align: right;
+}
+.chat-input {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background-color: white;
+  border-top: 1px solid #ddd;
+}
+.chat-input input {
+  flex-grow: 1;
+  margin-right: 10px;
+}
+#emojiBtn {
+  font-size: 18px;
+  border-radius: 50%;
+  padding: 10px;
+}
+
+/* Chat Input */
+/* .chat-input {
+  background-color: #ffffff;
+  border-top: 1px solid #eaeaea;
+} */
+
+/* Emoji Picker */
+#staticBackdrop .modal-body {
+  display: flex;
+  gap: 5px;
+}
+
+.emoji {
+  background: none;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.emoji:hover {
+  transform: scale(1.3);
+}
