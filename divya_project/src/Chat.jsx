@@ -10,7 +10,7 @@ import { id, i, init } from "@instantdb/react";
 const APP_ID = "1a3ca935-0836-4123-935e-5cfc895226b5";
 
 
-// Optional: Declare your schema!
+
 const schema = i.schema({
   entities: {
     todos: i.entity({
@@ -18,7 +18,8 @@ const schema = i.schema({
       done: i.boolean(),
       createdAt: i.number(),
       contactId : i.any(),
-      reactions:i.any()
+      reactions:i.any(),
+      image: i.any(),
     }),
   },
 });
@@ -34,21 +35,26 @@ const Chat = () => {
   const { contactId } = useParams();
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [editingMessage, setEditingMessage] = useState(null); 
+  const [editedText, setEditedText] = useState(""); 
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [contacts, setContacts] = useState(["Divya", "Dnyaun", "Sakshi", "Pratik", "Omkar", "Umesh", "Ajit"]);
-  // const [contacts, setContacts] = useState([
-  //   { name: "Divya", online: true },
-  //   { name: "Dnyaun", online: false },
-  //   { name: "Sakshi", online: true },
-  //   { name: "Pratik", online: false },
-  //   { name: "Omkar", online: true },
-  //   { name: "Umesh", online: false },
-  //   { name: "Ajit", online: true },
-  // ]);
+  // const [contacts, setContacts] = useState(["Divya", "Dnyaun", "Sakshi", "Pratik", "Omkar", "Umesh", "Ajit"]);
+  const [contacts, setContacts] = useState([
+    { name: "Divya", online: true },
+    { name: "Dnyaun", online: false },
+    { name: "Sakshi", online: true },
+    { name: "Pratik", online: false },
+    { name: "Omkar", online: true },
+    { name: "Umesh", online: false },
+    { name: "Ajit", online: true },
+  ]);
   
-  const [selectedMessage, setSelectedMessage] = useState(null); // Message to forward
-  const [forwardModalVisible, setForwardModalVisible] = useState(false); // Forward modal visibility
+  const [selectedMessage, setSelectedMessage] = useState(null); 
+  const [forwardModalVisible, setForwardModalVisible] = useState(false); 
   const [selectedMessageForReaction, setSelectedMessageForReaction] = useState(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [chatOption , setChatOption] = useState(true);
+  const [imgurl , setImgurl] = useState('');
   const query = {
     todos: {
       $: {
@@ -82,8 +88,10 @@ const Chat = () => {
       const messageText = newMessage;
       addMessage(messageText, 'You')
     }
+    
     setNewMessage('')
     addTodo(newMessage);
+    
   
   };
   const addMessage = (message, sender) => {
@@ -94,13 +102,19 @@ const Chat = () => {
   };
 
   const deleteMessage = async (messageId) => {
-    // Remove from database
+   
     await db.transact(db.tx.todos[messageId].delete());
 
-    // Remove from local state
+   
     setMessages((prev) => prev.filter((msg) => msg.id !== messageId));
   };
-
+  const clearChat = async () => {
+    const messageIds = messages.map((msg) => msg.id);
+    if (messageIds.length > 0) {
+      await db.transact(messageIds.map((id) => db.tx.todos[id].delete()));
+      setMessages([]);
+    }
+  };
 
   const toggleEmojiPicker = () => {
     setShowEmojiPicker(!showEmojiPicker);
@@ -108,15 +122,14 @@ const Chat = () => {
 
 
     
-  // Handle emoji click
   const insertEmoji = (emoji) => {
     setNewMessage(prevMessage => prevMessage + emoji);
-    setShowEmojiPicker(false); // Hide the emoji picker after selecting an emoji
+    setShowEmojiPicker(false); 
   };
 
   const forwardMessage = async (toContactId) => {
     if (selectedMessage) {
-      await db.transact(
+      const res = await db.transact(
         db.tx.todos[id()].update({
           text: selectedMessage.text,
           done: false,
@@ -124,6 +137,8 @@ const Chat = () => {
           contactId: toContactId,
         })
       );
+      console.log(res,'res');
+      
       setForwardModalVisible(false);
       setSelectedMessage(null);
     }
@@ -148,13 +163,77 @@ const Chat = () => {
     setSelectedMessageForReaction(null); 
   };
 
-  // const getContactStatus = (contactId) => {
-  //   const contact = contacts.find((c) => c.name === contactId);
-  //   return contact?.online ? "Online" : "Offline";
-  // };
+  const getContactStatus = (contactId) => {
+    const contact = contacts.find((c) => c.name === contactId);
+    return contact?.online ? "Online" : "Offline";
+  };
+
+  const startEditing = (message) => {
+    setEditingMessage(message.id);
+    setEditedText(message.text);
+  };
+
+  const saveEdit = async () => {
+    await db.transact(
+      db.tx.todos[editingMessage].update({
+        text: editedText,
+      })
+    );
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg.id === editingMessage ? { ...msg, text: editedText } : msg
+      )
+    );
+    setEditingMessage(null);
+    setEditedText("");
+  };
+
+
+  const handleMenuToggle = () => {
+    setShowMenu(!showMenu);
+  };
+
+
+  const fetchPresignedUrl = async (fileType) => {
+    const response = await fetch(
+      `http://localhost:5000/upload?fileType=${fileType}`
+    );
+
+    const data = await response.json();
+
+    return data;
+  };
+
+
+
+
+  const upload = async (files) => {
+
+    const file = files[0];
+
+    const data = await fetchPresignedUrl(file.type)
+
+    fetch(data.url, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type, 
+      },
+    })
+      .then(async (res) => {
+        let url = res.url;
+        setImgurl(url.split('?')[0]);
+
+      })
+      .catch((err) => {
+      });
+
+  };
+
 
   const addTodo = async (text) => {
     console.log(text,'text');
+    console.log(imgurl,'imgurl');
     
     let res = await db.transact(
       db.tx.todos[id()].update({
@@ -163,11 +242,20 @@ const Chat = () => {
         createdAt: Date.now(),
         contactId : contactId,
         reactions:[],
+        image : imgurl || ''
       })
     );
+    if(imgurl)
+{
+      setImgurl('');
+      setChatOption(!chatOption);
+}
     console.log(res,'res');
     
     
+  }
+  const handleOption = () => {
+    setChatOption(!chatOption);
   }
 
 
@@ -180,7 +268,7 @@ const Chat = () => {
         <div className="d-flex align-items-center">
           <img src="https://via.placeholder.com/40" alt="Chat" className="rounded-circle me-2"/>
           <span>{contactId}</span>
-          {/* <span
+          <span
                   className={`ms-2 badge ${
                     getContactStatus(contactId) === "Online"
                       ? "bg-success"
@@ -188,31 +276,86 @@ const Chat = () => {
                   }`}
                 >
                   {getContactStatus(contactId)}
-                </span> */}
-          <i className="fa-solid fa-ellipsis-vertical"></i>
-          
+                </span>
+          <i className="fa-solid fa-ellipsis-vertical" onClick={handleMenuToggle} style={{ cursor: 'pointer', fontSize: '24px' }}></i>
+          {showMenu && (
+        <div 
+          style={{
+            position: 'absolute',
+            top: '50px',
+            right: '20px',
+            background: '#fff',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            boxShadow: '0px 4px 6px rgba(0, 0, 0, 0.1)',
+            zIndex: '10',
+          }}
+        >
+          <ul style={{ listStyle: 'none', margin: '0', padding: '10px', color:"black" }}>
+            <li style={{ padding: '5px 10px', cursor: 'pointer' }} onClick={clearChat}>Clear Chat</li>
+            
+          </ul>
+        </div>
+      )}
 
           
         </div>
-        <i className="bi bi-three-dots"></i>
+        <div>
+        
+        </div>
+        
       </div>
       <div className="chat-messages">
-        <div className="message sent">
-        {messages && messages.map((msg)=>(
-        <div class="dropdown" key={msg.id}>
-            <a class="btn btn-secondary dropdown-toggle mt-2"  role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
-            <strong>{msg.sender}</strong> {msg.text}
-            </a>
+      
+        
+        {messages.map((msg) => (
+          <>
+          {
+           msg?.image &&  msg?.image != "" ? 
+
+        <div className="image-div mt-5">
+          <img src={msg?.image} alt="" style={{width:"30%", height:"100px"}}  />
+        </div>
+        :
           
-            <ul class="dropdown-menu" aria-labelledby="dropdownMenuLink">
-              <li><a class="dropdown-item"  onClick={() => deleteMessage(msg.id)}>delete</a></li>
-              <li><a class="dropdown-item" onClick={() => {
-                          setSelectedMessage(msg);
-                          setForwardModalVisible(true);
-                        }} >Forword</a></li>
-              <li><a class="dropdown-item" onClick={() => setSelectedMessageForReaction(msg)} href="#">React</a></li>
-            </ul>
-            <div className="reactions">
+            <div className="message sent" key={msg.id}>
+              {editingMessage === msg.id ? (
+                <div>
+                  <input
+                    type="text"
+                    className="form-control"
+                    value={editedText}
+                    onChange={(e) => setEditedText(e.target.value)}
+                  />
+                  <button className="btn btn-success" onClick={saveEdit}>
+                    Save
+                  </button>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => setEditingMessage(null)}
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              ) : (
+                <div className="dropdown" key={msg.id}>
+
+                  <a className="btn btn-secondary dropdown-toggle mt-2"  role="button" id="dropdownMenuLink" data-bs-toggle="dropdown" aria-expanded="false">
+                    <strong>{msg.sender}</strong> {msg.text}
+                  </a>
+                  {/* <div style={{height : 30 , width : 30}}><img src={imgurl} alt="" /></div> */}
+
+                  <ul className="dropdown-menu" aria-labelledby="dropdownMenuLink">
+                    <li><a class="dropdown-item"  onClick={() => deleteMessage(msg.id)}>Delete</a></li>
+                    <li><a className="dropdown-item" onClick={() => {
+                                            setSelectedMessage(msg);
+                                            setForwardModalVisible(true);
+                                          }} >Forword</a></li>
+                    <li><a className="dropdown-item" onClick={() => setSelectedMessageForReaction(msg)} href="#">React</a></li>
+                    <li><a className="dropdown-item"  onClick={() => startEditing(msg)} href="#">Edit</a></li>
+
+                  </ul>
+                  <div className="reactions">
                     {msg.reactions &&
                       msg.reactions.map((reaction, index) => (
                         <span key={index} className="reaction">
@@ -220,29 +363,33 @@ const Chat = () => {
                         </span>
                       ))}
                   </div>
-        </div>
-        
-        ))}
-      
-           {/* {messages && messages.map((msg)=>(
-            <div key={msg.id}>
-              <strong>{msg.sender}</strong> <p>{msg.text}</p>
-              <button
-                  className="btn btn-sm btn-danger ms-2"
-                  onClick={() => deleteMessage(msg.id)}
-                >
-                  Delete
-                </button>
+                   
+                </div>
+                
+              )}
             </div>
-          ))} */}
-        </div>
-        
-        {/* <div className="message received">
-          <p>I’m good, thanks! What about you?</p>
-        </div> */}
+          }
+          </>
+          ))}
+              <div style={{height : 30 , width : 30}}><img src={imgurl} alt="" /></div>
+
       </div>
+      
       <div className="chat-input">
-        <input type="text" className="form-control" placeholder="Type a message" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)}/>
+        
+          <button onClick={handleOption} className="btn btn-light" style={{marginRight:"10px"}}>
+            <i class="fa-solid fa-plus"></i>
+          </button>
+        {
+          chatOption ? <input type="text" className="form-control ml-5" onKeyDown={(e) => {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        }}  placeholder="Type a message" value={newMessage} onChange={(e)=>setNewMessage(e.target.value)}/>  :
+           <><input type="file" onChange={(e) => upload(e.target.files)} />      
+           </>
+
+        }
         
         <button class="btn btn-success" id="sendMessageBtn"  onClick={sendMessage} type="submit">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-send" viewBox="0 0 16 16">
@@ -293,13 +440,16 @@ const Chat = () => {
               </div>
               <div className="modal-body">
                 <p>Select a contact to forward the message:</p>
+                
+                
+                {typeof contacts}
                 {contacts.map((contact) => (
                   <button
-                    key={contact}
+                    key={contact.id}
                     className="btn btn-primary me-2"
-                    onClick={() => forwardMessage(contact)}
+                    onClick={() => forwardMessage(contact.name)}
                   >
-                    {contact}
+                    {contact.name}
                   </button>
                 ))}
               </div>
@@ -342,23 +492,7 @@ const Chat = () => {
 
 
 
-    // <div>
-    //   <h2>Chat with {contactId}</h2>
-    //   <div className="messages">
-    //     {messages.map((msg) => (
-    //       <div key={msg.id}>
-    //         <strong>{msg.sender}:</strong> {msg.text}
-    //       </div>
-    //     ))}
-    //   </div>
-    //   <input
-    //     type="text"
-    //     value={newMessage}
-    //     onChange={(e) => setNewMessage(e.target.value)}
-    //     placeholder="Type a message"
-    //   />
-    //   <button onClick={sendMessage}>Send</button>
-    // </div>
+    
   );
 };
 
