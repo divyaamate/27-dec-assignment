@@ -1,4 +1,4 @@
-# 27-dec-assignment
+# Whatsapp Web Application
 
 ## Table of Contents
 
@@ -44,7 +44,7 @@ Follow these steps to get the development environment up and running:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/your-username/your-repository-name.git
+   git clone https://github.com/divyaamate/27-dec-assignment.git
 Navigate into the project directory: divya_project
 
 
