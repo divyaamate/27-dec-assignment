@@ -59,17 +59,17 @@ Navigate into the project directory: divya_project
 
 bash
 Copy code
-cd 27-dec-assignment/divya_project
+       cd 27-dec-assignment/divya_project
+       
 Install dependencies:
-
 bash
 Copy code
-npm install
+      npm install
+      
 Start the development server:
-
 bash
 Copy code
-npm run dev
+         npm run dev
 This will open the app in your browser at http://localhost:5173.
 
 
